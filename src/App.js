@@ -9,7 +9,8 @@ function App() {
   return (
     <div style={{ fontFamily:'Arial', maxWidth:600, margin:'60px auto',
                   padding:40, border:'1px solid #ddd', borderRadius:8 }}>
-      <h1 style={{ color:'#1A3F6B' }}>APIIT React APP</h1>
+      <h1 style={{ color:'#1A3F6B' }}>APIIT React APP V2</h1>
+
       <p style={{ color:'#2E5B8A', fontSize:14 }}>
         AWS Golden Path — SaaS Platform
       </p>
