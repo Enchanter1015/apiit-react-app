@@ -1,0 +1,104 @@
+name: Apiit Application Pipeline
+ 
+on:
+  push:
+    branches: [main]
+ 
+env:
+  AWS_REGION:  us-east-1
+  TEAM:        Development
+  ENVIRONMENT: prod
+  PROJECT:     apiit-saas
+  CATALOG_ORG: Enchanter1015
+  CATALOG_VER: v1.0.0
+ 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+ 
+      - name: Checkout application code
+        uses: actions/checkout@v4
+ 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+ 
+      - name: Set app version from Git SHA
+        run: echo "APP_VERSION=v$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+ 
+      - name: Download catalog components at pinned version
+        run: |
+          mkdir -p infra
+          BASE=https://raw.githubusercontent.com/${{ env.CATALOG_ORG }}
+          BASE=$BASE/golden-path-catalog/${{ env.CATALOG_VER }}/components
+          curl -fsSL $BASE/hosting.yaml -o infra/hosting.yaml
+          curl -fsSL $BASE/cdn.yaml     -o infra/cdn.yaml
+          echo "Catalog ${{ env.CATALOG_VER }} components downloaded"
+ 
+      - name: Install and build React application
+        run: |
+          cd app && npm install
+          REACT_APP_VERSION=${{ env.APP_VERSION }} \
+          REACT_APP_TEAM=${{ env.TEAM }} \
+          REACT_APP_ENVIRONMENT=${{ env.ENVIRONMENT }} \
+          REACT_APP_CATALOG_VER=${{ env.CATALOG_VER }} \
+          npm run build
+ 
+      - name: Deploy hosting stack from catalog component
+        run: |
+          aws cloudformation deploy \
+            --template-file infra/hosting.yaml \
+            --stack-name apiit-hosting-${{ env.ENVIRONMENT }} \
+            --parameter-overrides \
+              Team=${{ env.TEAM }} \
+              Environment=${{ env.ENVIRONMENT }} \
+              ProjectName=${{ env.PROJECT }} \
+              AppVersion=${{ env.APP_VERSION }} \
+            --no-fail-on-empty-changeset
+ 
+      - name: Deploy CDN stack from catalog component
+        run: |
+          aws cloudformation deploy \
+            --template-file infra/cdn.yaml \
+            --stack-name apiit-cdn-${{ env.ENVIRONMENT }}-${{ env.APP_VERSION }} \
+            --parameter-overrides \
+              Team=${{ env.TEAM }} \
+              Environment=${{ env.ENVIRONMENT }} \
+              ProjectName=${{ env.PROJECT }} \
+              AppVersion=${{ env.APP_VERSION }} \
+              HostingStack=apiit-hosting-${{ env.ENVIRONMENT }} \
+            --no-fail-on-empty-changeset
+ 
+      - name: Sync compiled assets to S3
+        run: |
+          BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name apiit-hosting-${{ env.ENVIRONMENT }} \
+            --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' \
+            --output text)
+          aws s3 sync app/build s3://$BUCKET --delete
+ 
+      - name: Invalidate CloudFront cache
+        run: |
+          DIST=$(aws cloudformation describe-stacks \
+            --stack-name apiit-cdn-${{ env.ENVIRONMENT }}-${{ env.APP_VERSION }} \
+            --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' \
+            --output text)
+          aws cloudfront create-invalidation \
+            --distribution-id $DIST --paths '/*'
+ 
+      - name: Print live URL
+        run: |
+          URL=$(aws cloudformation describe-stacks \
+            --stack-name apiit-cdn-${{ env.ENVIRONMENT }}-${{ env.APP_VERSION }} \
+            --query 'Stacks[0].Outputs[?OutputKey==`DistributionURL`].OutputValue' \
+            --output text)
+          echo "======================================"
+          echo "Deployment complete"
+          echo "App version:     ${{ env.APP_VERSION }}"
+          echo "Catalog version: ${{ env.CATALOG_VER }}"
+          echo "Live at:         $URL"
+          echo "======================================"
