@@ -41,7 +41,7 @@ jobs:
  
       - name: Install and build React application
         run: |
-          cd app && npm install
+          npm install
           REACT_APP_VERSION=${{ env.APP_VERSION }} \
           REACT_APP_TEAM=${{ env.TEAM }} \
           REACT_APP_ENVIRONMENT=${{ env.ENVIRONMENT }} \
