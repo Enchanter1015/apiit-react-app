@@ -38,7 +38,12 @@ jobs:
           curl -fsSL $BASE/hosting.yaml -o infra/hosting.yaml
           curl -fsSL $BASE/cdn.yaml     -o infra/cdn.yaml
           echo "Catalog ${{ env.CATALOG_VER }} components downloaded"
- 
+      - name: Debug catalog download
+        run: |
+          echo "--- hosting.yaml contents ---"
+          cat infra/hosting.yaml
+          echo "--- cdn.yaml contents ---"
+          cat infra/cdn.yaml
       - name: Install and build React application
         run: |
           npm install
