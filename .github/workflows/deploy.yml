@@ -84,7 +84,7 @@ jobs:
             --stack-name apiit-hosting-${{ env.ENVIRONMENT }} \
             --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' \
             --output text)
-          aws s3 sync app/build s3://$BUCKET --delete
+          aws s3 sync build s3://$BUCKET --delete
  
       - name: Invalidate CloudFront cache
         run: |
