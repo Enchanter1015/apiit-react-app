@@ -6,12 +6,12 @@ on:
 
 jobs:
   deploy:
-    uses: Enchanter1015/golden-path-catalog/.github/workflows/react.deploy.yaml@v3.0.1
+    uses: Enchanter1015/golden-path-catalog/.github/workflows/react.deploy.yaml@v3.0.2
     with:
       team:        Development
       environment: prod
       project:     apiit-saas
-      catalog_ver: v3.0.1
+      catalog_ver: v3.0.2
       aws_region:  us-east-1
     secrets:
       AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
