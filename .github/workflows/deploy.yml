@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy:
-    uses: Enchanter1015/golden-path-catalog/v3.0.0/frontend/react-hosting/deploy.yaml
+    uses: Enchanter1015/golden-path-catalog/.github/workflows/react.deploy.yaml@v3.0.1
     with:
       team:        Development
       environment: prod
