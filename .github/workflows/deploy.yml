@@ -1,5 +1,5 @@
 name:  Apiit Golden Path 
-# update react.deploy.yaml@v3.0.3 version and catalog_ver: v3.0.3
+# update react.deploy.yaml@v3.0.3 version and catalog_ver: v3.0.3 
 on:
   push:
     branches: [main]
